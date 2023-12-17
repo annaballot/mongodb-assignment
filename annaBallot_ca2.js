@@ -172,9 +172,37 @@ db.movies.deleteOne({ _id: 10000001 });
 //************************************************************************************************************************* */
 
 //Part 4, Query 1
-//
+//show all movies, split out by genre (movies will be counted more than once if they have mulitiple genres), and shows average imdb.rating per genre, and sorts by avd rating
+db.movies.aggregate([{ $match: {  type: "movie" } } , { $project: { _id: 0, title: 1, genres: 1, "imdb.rating": 1}}, { $unwind: "$genres" }, {$group: { _id: "$genres", num_films: { $sum: 1 }, avg_rating: { $avg: "$imdb.rating" } }}]).sort({ avg_rating: -1 });
+
+
+db.users.aggregate([ { $lookup: { from: "movies", localField: "favourites", foreignField: "_id", pipeline: [], as: "movie_details" } } ]);
+
+
+
+db.users.aggregate([ { $lookup: { from: "movies", localField: "favourites", foreignField: "_id", pipeline: [], as: "movie_details" } }, { $project: { _id: 0, name: 1, "movie_details.title": 1}}]);
+
+
+db.users.aggregate([ { $lookup: { from: "movies", localField: "favourites", foreignField: "_id", pipeline: [], as: "movie_details" } }, { $project: { _id: 0, name: 1, "movie_details.title": 1}}]);
+
+
+
+
+
+
+
+
+
 
 db.movies.aggregate([{ $match: {  type: "movie" } } , { $project: { _id: 0, title: 1, genres: 1, ratingPercent: { $multiply: [ "$imdb.rating", 10 ]}}}, { $unwind: "$genres" }, {$group: { _id: "$genres", num_films: { $sum: 1 } }}]).sort({ num_films: -1 });
+
+
+
+
+
+
+
+
 
 
 db.movies.aggregate([{ $match: {  _id: { $in: [10000001, 10000002] } } } , { $project: { _id: 0, title: 1, genres: 1, ratingPercent: { $multiply: [ "$imdb.rating", 10 ]}}}, { $unwind: "$genres" }, {$group: { _id: "$genres", num_films: { $sum: 1 } }}]).sort({ num_films: -1 });
