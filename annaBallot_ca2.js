@@ -1,8 +1,17 @@
-// show databases;
-// use ca2;
-// show tables;
 
-db.movies.findOne();
+//************************************************************************************************************************* */
+//************************************************************************************************************************* */
+
+//  I have left the formatting in this script, but on my laptop, each of these queries only runs if I put it all on the same line.
+
+
+
+// You will need to run the following statement. This script gives me an error if I don't comment it out though.
+// use ca2;
+
+
+//************************************************************************************************************************* */
+//************************************************************************************************************************* */
 
 //Part 1, Query 1
 //This query shows the number of series greater than 2010, and less than or equal to 2013
@@ -114,7 +123,13 @@ db.users.insertMany([
     email: "anna.ballot@email.com",
     password: "secret",
     dob: ISODate("1990-01-01"),
-    favourites: [10000001, 10000002],
+    favourites: [
+      10000001,
+      10000002,
+      ObjectId("573a13c4f29313caabd6b7f4"),
+      ObjectId("573a13b0f29313caabd34a3e"),
+      ObjectId("573a13b0f29313caabd337c9"),
+    ],
   },
   {
     _id: 2,
@@ -122,7 +137,13 @@ db.users.insertMany([
     email: "frank@email.com",
     password: "secret123",
     dob: ISODate("1985-06-01"),
-    favourites: [ObjectId("573a1393f29313caabcdd0b8"), 10000002],
+    favourites: [
+      ObjectId("573a1393f29313caabcdd0b8"),
+      10000002,
+      ObjectId("573a13c3f29313caabd6917f"),
+      ObjectId("573a13b0f29313caabd3486a"),
+      ObjectId("573a13aef29313caabd2cb25"),
+    ],
   },
   {
     _id: 3,
@@ -134,6 +155,8 @@ db.users.insertMany([
       10000001,
       ObjectId("573a1393f29313caabcdca95"),
       ObjectId("573a1393f29313caabcdca92"),
+      ObjectId("573a13c3f29313caabd6917f"),
+      ObjectId("573a13b0f29313caabd337c9"),
     ],
   },
 ]);
@@ -162,7 +185,10 @@ db.users.updateMany({}, { $pull: { favourites: 10000001 } });
 //Part 3, Query 4
 //Update all movies I added: add 'Adventure' to Genres if not already there
 //will find 2 but only update one, as it's in one already
-db.movies.updateMany( { _id: { $in: [10000001, 10000002] } }, { $addToSet: { genres: "Adventure" } } );
+db.movies.updateMany(
+  { _id: { $in: [10000001, 10000002] } },
+  { $addToSet: { genres: "Adventure" } }
+);
 
 //Part 3, Query 5
 //Update all movies I added: add 'Adventure' to Genres if not already there
@@ -173,161 +199,41 @@ db.movies.deleteOne({ _id: 10000001 });
 
 //Part 4, Query 1
 //show all movies, split out by genre (movies will be counted more than once if they have mulitiple genres), and shows average imdb.rating per genre, and sorts by avd rating
-db.movies.aggregate([{ $match: {  type: "movie" } } , { $project: { _id: 0, title: 1, genres: 1, "imdb.rating": 1}}, { $unwind: "$genres" }, {$group: { _id: "$genres", num_films: { $sum: 1 }, avg_rating: { $avg: "$imdb.rating" } }}]).sort({ avg_rating: -1 });
-
-
-db.users.aggregate([ { $lookup: { from: "movies", localField: "favourites", foreignField: "_id", pipeline: [], as: "movie_details" } } ]);
-
-
-
-db.users.aggregate([ { $lookup: { from: "movies", localField: "favourites", foreignField: "_id", pipeline: [], as: "movie_details" } }, { $project: { _id: 0, name: 1, "movie_details.title": 1}}]);
-
-
-db.users.aggregate([ { $lookup: { from: "movies", localField: "favourites", foreignField: "_id", pipeline: [], as: "movie_details" } }, { $project: { _id: 0, name: 1, "movie_details.title": 1}}]);
-
-
-
-
-
-
-
-
-
-
-db.movies.aggregate([{ $match: {  type: "movie" } } , { $project: { _id: 0, title: 1, genres: 1, ratingPercent: { $multiply: [ "$imdb.rating", 10 ]}}}, { $unwind: "$genres" }, {$group: { _id: "$genres", num_films: { $sum: 1 } }}]).sort({ num_films: -1 });
-
-
-
-
-
-
-
-
-
-
-db.movies.aggregate([{ $match: {  _id: { $in: [10000001, 10000002] } } } , { $project: { _id: 0, title: 1, genres: 1, ratingPercent: { $multiply: [ "$imdb.rating", 10 ]}}}, { $unwind: "$genres" }, {$group: { _id: "$genres", num_films: { $sum: 1 } }}]).sort({ num_films: -1 });
-
-
-
-
-
-
-
-
-
-
-
-db.movies.aggregate([{ $match: {  _id: { $in: [10000001, 10000002] } } }, { $count: "test" } ]);
-
-
-db.movies.aggregate([{ $match: {  _id: { $in: [10000001, 10000002] } } } , { $project: { _id: 0, title: 1, ratingPercent: { $multiply: [ "$imdb.rating", 10 ]}}}]);
-
-
-
-
-
-db.movies.aggregate([{ $match: { type: "movie" } }, { $count: "test" }]);
-
 db.movies
   .aggregate([
-    { $unwind: "$cast" },
-    { $group: { _id: "$cast", num_films: { $sum: 1 } } },
+    { $match: { type: "movie" } },
+    { $project: { _id: 0, title: 1, genres: 1, "imdb.rating": 1 } },
+    { $unwind: "$genres" },
+    {
+      $group: {
+        _id: "$genres",
+        num_films: { $sum: 1 },
+        avg_rating: { $avg: "$imdb.rating" },
+      },
+    },
   ])
-  .sort({ num_films: -1 });
+  .sort({ avg_rating: -1 });
 
-
-
-db.movies.insertMany([ { _id: 10000001, title: "Oppenheimer", year: 2023, runtime: 340, cast: ["Cillian Murphy", "Emily Blunt", "Matt Damon"], plot: "A dramatization of the life story of J. Robert Oppenheimer, the physicist who had a large hand in the development of the atomic bomb, thus helping end World War 2. We see his life from university days all the way to post-WW2, where his fame saw him embroiled in political machinations", genres: ["Biography", "Drama", "History"], imdb: { rating: 8.4, votes: 550000 }, }, { _id: 10000002, title: "Avatar: The Way of Water", year: 2022, runtime: 352, cast: ["Sam Worthington", "Zoe Saldana", "Sigourney Weaver"], plot: "Jake Sully lives with his newfound family formed on the extrasolar moon Pandora. Once a familiar threat returns to finish what was previously started, Jake must work with Neytiri and the army of the Na'vi race to protect their home.", genres: ["Action", "Adventure", "Fantasy", "Sci-Fi"], imdb: { rating: 7.6, votes: 472000 }, }, ]);
-
-
-db.movies.aggregate([
-  { $unwind: "$countries" },
-  { $group: { _id: "$countries", num_films: { $sum: 1 } } },
-]);
-
-db.movies.find({ _id: { $in: [10000001, 10000002] } });
-
-db.movies.find({ _id: { $in: [10000001, 10000002] } });
-db.users.find({ _id: { $in: [1, 2, 3] } });
-
-db.users.find({ _id: { $in: [ObjectId("657ed525c464e8c379e03c51"), 2, 3] } });
-
-db.users.deleteOne({
-  _id: { $in: [ObjectId("657ed525c464e8c379e03c51"), 2, 3] },
-});
-
-db.users.find();
-
-db.movies.find({ _id: { $in: [10000001, 10000002] } });
-db.movies.deleteMany({ _id: { $in: [10000001, 10000002] } });
-
-//Part 2, Query 2
-// Create Movie 2
-
-//Part 2, Query 3
-// Create User 1
-
-//Part 2, Query 4
-// Create User 2
-
-//Part 2, Query 5
-// Create User 3
-
-//************************************************************************************************************************* */
-//************************************************************************************************************************* */
-
-db.movies.findOne({ year: { $gt: 2015 } });
-
-db.movies.find({ "comments.date": { $gte: ISODate("2010-01-01") } }).count();
-
-db.movies.find({ type: { $in: ["series"] } }).pretty();
-
-db.movies.find({ genres: "Comedy" });
-
-// db.movies.find( {$or: [
-//     {viewer.rating:}
-// ]})
-
-//count number of films per genre
-db.movies.aggregate([
-  { $unwind: "$genres" },
-  { $group: { _id: "$genres", num_films: { $sum: 1 } } },
-]);
-
-db.movies.aggregate([
-  { $unwind: "$type" },
-  { $group: { _id: "$type", num_films: { $sum: 1 } } },
-]);
-
-db.movies.aggregate([
-  { $unwind: "$rated" },
-  { $group: { _id: "$rated", num_films: { $sum: 1 } } },
-]);
-
-db.movies.aggregate([
-  { $unwind: "$countries" },
-  { $group: { _id: "$countries", num_films: { $sum: 1 } } },
-]);
-
-db.movies.aggregate([
-  { $unwind: "$runtime" },
-  { $group: { _id: "$runtime", num_films: { $sum: 1 } } },
-]);
-
-db.movies.aggregate([
-  { $unwind: "$comments.name" },
-  { $group: { _id: "$comments.name", num_films: { $sum: 1 } } },
-]);
-
-db.movies.aggregate([
-  { $group: { _id: "$comments.name", num_films: { $sum: 1 } } },
-]);
-
-db.movies.find({ type: "movie", year: { $gt: 2015 } });
-
-db.movies
+//Part 4, Query 2
+//Shows all users, with their top 3 favourite movies, based on most recent year
+db.users
   .aggregate([
-    { $unwind: "$cast" },
-    { $group: { _id: "$cast", num_films: { $sum: 1 } } },
+    {
+      $lookup: {
+        from: "movies",
+        localField: "favourites",
+        foreignField: "_id",
+        pipeline: [{ $sort: { year: -1 } }, { $limit: 3 }],
+        as: "movie_details",
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        name: 1,
+        "movie_details.title": 1,
+        "movie_details.year": 1,
+      },
+    },
   ])
-  .sort({ num_films: -1 });
+  .sort({ name: 1 });
